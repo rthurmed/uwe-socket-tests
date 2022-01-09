@@ -41,25 +41,40 @@ const joinDiagramAnd = (diagramId, callback) => {
   socket.once('join', callback)
 }
 
-test('leave diagram', (done) => {
-  // arrange
+test('grab entity', (done) => {
+  const ENTITY_TYPE = 11
   joinDiagramAnd(DIAGRAM_ID, (participant) => {
-    // act
-    socket.emit('leave')
-    socket.once('leave', (participantId) => {
-      // assert
-      expect(participantId).toBe(participant.id)
-      done()
+    socket.emit('create', {
+      type: ENTITY_TYPE,
+      diagramId: DIAGRAM_ID
+    })
+    socket.once('create', (entity) => { // creates entity to grab it
+      socket.emit('grab', entity.id)
+      socket.once('grab', (payload) => {
+        expect(payload.participantId).toBe(participant.id)
+        expect(payload.entityId).toBe(entity.id)
+        done()
+      })
     })
   })
 })
 
-test('grab entity', (done) => {
-  // TODO
-  done()
-})
-
 test('drop entity', (done) => {
-  // TODO
-  done()
+  const ENTITY_TYPE = 11
+  joinDiagramAnd(DIAGRAM_ID, (participant) => {
+    socket.emit('create', {
+      type: ENTITY_TYPE,
+      diagramId: DIAGRAM_ID
+    })
+    socket.once('create', (entity) => { // creates entity to grab it
+      socket.emit('grab', entity.id)
+      socket.once('grab', (grabbedEntity) => {
+        socket.emit('drop')
+        socket.once('drop', (payload) => {
+          expect(payload.participantId).toBe(participant.id)
+          done()
+        })
+      })
+    })
+  })
 })
